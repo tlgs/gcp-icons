@@ -1,7 +1,7 @@
-default: download unzip collect
+default: download unzip collect cleanup
 
 download:
-  curl \
+  curl -sS \
     -O https://services.google.com/fh/files/misc/core-products-icons.zip \
     -O https://services.google.com/fh/files/misc/category-icons.zip
 
