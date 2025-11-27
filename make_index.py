@@ -1,10 +1,8 @@
 import argparse
 import html
-import sys
 from pathlib import Path
 
 LABEL_MAP = {
-    # Core products
     "AIHypercomputer-512-color.svg": "AI Hypercomputer",
     "AlloyDB-512-color.svg": "AlloyDB",
     "Anthos-512-color.svg": "Anthos",
@@ -24,7 +22,6 @@ LABEL_MAP = {
     "SecurityCommandCenter-512-color.svg": "Security Command Center",
     "ThreatIntelligence-512-color.svg": "Google Threat Intelligence",
     "VertexAI-512-color.svg": "Vertex AI",
-    # Product categories
     "Agents-512-color.svg": "AI Applications & Agents",
     "AIMachineLearning-512-color.svg": "AI & Machine Learning",
     "BusinessIntelligence-512-color.svg": "Business Intelligence",
@@ -59,38 +56,6 @@ SECTION_CONFIG = [
 ]
 
 
-def get_label(filename):
-    return LABEL_MAP.get(filename, filename)
-
-
-def find_icons(directory):
-    dir_path = Path(directory)
-    return sorted([f.name for f in dir_path.glob("*.svg")])
-
-
-def build_gallery_section(title, directory, files, url_prefix):
-    items = []
-    for f in files:
-        label = get_label(f)
-        rel_path = f"{Path(directory).name}/{f}"
-        img_src = html.escape(rel_path)
-        copy_url = html.escape(url_prefix + rel_path)
-
-        items.append(f'''
-        <div class="item" onclick="copyToClipboard('{copy_url}')">
-            <img src="{img_src}" alt="{html.escape(label)}">
-            <div class="label">{html.escape(label)}</div>
-        </div>
-        ''')
-
-    return f"""
-<h2>{html.escape(title)}</h2>
-<div class="gallery">
-    {"".join(items)}
-</div>
-"""
-
-
 def build_html(sections):
     return f"""<!DOCTYPE html>
 <html>
@@ -105,8 +70,7 @@ def build_html(sections):
         background: #fafafa;
     }}
     h2 {{
-        margin-top: 40px;
-        margin-bottom: 20px;
+        margin: 40px 0 20px;
     }}
     .gallery {{
         display: flex;
@@ -154,11 +118,11 @@ def build_html(sections):
 </style>
 
 <script>
-function showToast(message) {{
-    const toast = document.getElementById('toast');
-    toast.textContent = message;
-    toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 2000);
+function showToast(m) {{
+    const t = document.getElementById('toast');
+    t.textContent = m;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2000);
 }}
 
 function copyToClipboard(url) {{
@@ -171,11 +135,7 @@ function copyToClipboard(url) {{
 </head>
 <body>
 
-<p>
-  Click icons to copy their absolute URL.
-  PNG versions also available.
-  Google source <a href="https://cloud.google.com/icons">here</a>.
-</p>
+<p>Click icons to copy their absolute URL. PNG versions also available. Google source <a href="https://cloud.google.com/icons">here</a>.</p>
 
 {"".join(sections)}
 
@@ -188,39 +148,31 @@ function copyToClipboard(url) {{
 
 def main():
     parser = argparse.ArgumentParser(description="Generate icon gallery HTML")
-    parser.add_argument(
-        "--url-prefix",
-        required=True,
-        help="URL prefix for icon links (e.g., https://example.com/icons/)",
-    )
-    parser.add_argument(
-        "--top-dir",
-        default="_site",
-        help="Top-level directory containing icon subdirectories (default: _site)",
-    )
-    parser.add_argument(
-        "--output", help="Output HTML file path (default: TOP_DIR/index.html)"
-    )
+    parser.add_argument("--url-prefix", required=True, help="URL prefix for icon links")
+    parser.add_argument("--top-dir", required=True, help="Top-level directory")
     args = parser.parse_args()
 
-    url_prefix = args.url_prefix
+    url_prefix = args.url_prefix if args.url_prefix.endswith("/") else args.url_prefix + "/"
     top_dir = Path(args.top_dir)
-    output_path = Path(args.output) if args.output else top_dir / "index.html"
+    output_path = top_dir / "index.html"
 
     sections = []
     for dir_name, title in SECTION_CONFIG:
         section_dir = top_dir / dir_name
-        svg_files = find_icons(section_dir)
-        if svg_files:
-            sections.append(
-                build_gallery_section(title, section_dir, svg_files, url_prefix)
+
+        items = []
+        for f in sorted(f.name for f in section_dir.glob("*.svg")):
+            label = html.escape(LABEL_MAP.get(f, f))
+            img_src = html.escape(dir_name + "/" + f)
+            copy_url = html.escape(url_prefix + dir_name + "/" + f)
+            items.append(
+                f'<div class="item" onclick="copyToClipboard(\'{copy_url}\')"><img src="{img_src}" alt="{label}"><div class="label">{label}</div></div>'
             )
 
-    html_output = build_html(sections)
-    output_path.write_text(html_output)
+        sections.append(f'<h2>{html.escape(title)}</h2><div class="gallery">{"".join(items)}</div>')
 
-    return 0
+    output_path.write_text(build_html(sections))
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()
