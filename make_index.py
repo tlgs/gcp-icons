@@ -95,18 +95,17 @@ def main() -> None:
     top_dir = Path(args.top_dir)
     output_path = top_dir / "index.html"
 
-    # Set up Jinja2 environment
-    script_dir = Path(__file__).parent
+    # set up Jinja2 environment
     env = Environment(
-        loader=FileSystemLoader(script_dir),
-        autoescape=select_autoescape(["html", "xml", "jinja2"]),
+        loader=FileSystemLoader("templates/"),
+        autoescape=True,
         trim_blocks=True,
         lstrip_blocks=True,
         undefined=StrictUndefined,
     )
-    template = env.get_template("index.html.jinja2")
+    template = env.get_template("index.html.j2")
 
-    # Build data structure for template
+    # build data structure for template
     sections = []
     for dir_name, title in SECTION_CONFIG:
         section_dir = top_dir / dir_name
