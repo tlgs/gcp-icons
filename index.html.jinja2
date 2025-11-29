@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Icon Gallery</title>
+
+    <style>
+      body {
+        font-family: sans-serif;
+        padding: 20px;
+        background: #fafafa;
+      }
+      h2 {
+        margin: 40px 0 20px;
+      }
+      .gallery {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+      }
+      .item {
+        width: 100px;
+        text-align: center;
+        cursor: pointer;
+        user-select: none;
+        transition: transform 0.2s ease;
+      }
+      .item:hover {
+        transform: translateY(-2px);
+      }
+      .item img {
+        width: 64px;
+        height: 64px;
+        object-fit: contain;
+      }
+      .label {
+        margin-top: 6px;
+        font-size: 0.9em;
+        color: #444;
+        overflow-wrap: anywhere;
+      }
+      .toast {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: #333;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 4px;
+        opacity: 0;
+        transition: opacity 0.3s ease-in-out;
+        pointer-events: none;
+        font-size: 14px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      }
+      .toast.show {
+        opacity: 1;
+      }
+    </style>
+
+    <script>
+      function showToast(m) {
+        const t = document.getElementById('toast');
+        t.textContent = m;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 2000);
+      }
+      
+      function copyToClipboard(url) {
+        navigator.clipboard.writeText(url)
+          .then(() => showToast('Copied to clipboard!'))
+          .catch(() => showToast('Failed to copy'));
+      }
+    </script>
+  </head>
+
+  <body>
+    <p>
+      Click icons to copy their absolute URL.
+      PNG versions also available.
+      Google source <a href="https://cloud.google.com/icons">here</a>.
+    </p>
+
+    {% for section in sections %}
+    <h2>{{ section['title'] }}</h2>
+    <div class="gallery">
+      {% for item in section['items'] %}
+      <div class="item" onclick="copyToClipboard('{{ item['url'] }}')">
+        <img src="{{ item['img_src'] }}" alt="{{ item['label'] }}">
+        <div class="label">{{ item['label'] }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+
+    <div id="toast" class="toast"></div>
+  </body>
+</html>

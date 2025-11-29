@@ -1,6 +1,11 @@
+# /// script
+# dependencies = [ "jinja2" ]
+# ///
+
 import argparse
-import html
 from pathlib import Path
+
+from jinja2 import Environment, FileSystemLoader
 
 LABEL_MAP = {
     "AIHypercomputer-512-color.svg": "AI Hypercomputer",
@@ -56,122 +61,51 @@ SECTION_CONFIG = [
 ]
 
 
-def build_html(sections):
-    return f"""<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Icon Gallery</title>
-
-<style>
-    body {{
-        font-family: sans-serif;
-        padding: 20px;
-        background: #fafafa;
-    }}
-    h2 {{
-        margin: 40px 0 20px;
-    }}
-    .gallery {{
-        display: flex;
-        flex-wrap: wrap;
-        gap: 20px;
-    }}
-    .item {{
-        width: 100px;
-        text-align: center;
-        cursor: pointer;
-        user-select: none;
-        transition: transform 0.2s ease;
-    }}
-    .item:hover {{
-        transform: translateY(-2px);
-    }}
-    .item img {{
-        width: 64px;
-        height: 64px;
-        object-fit: contain;
-    }}
-    .label {{
-        margin-top: 6px;
-        font-size: 0.9em;
-        color: #444;
-        overflow-wrap: anywhere;
-    }}
-    .toast {{
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        background: #333;
-        color: white;
-        padding: 12px 20px;
-        border-radius: 4px;
-        opacity: 0;
-        transition: opacity 0.3s ease-in-out;
-        pointer-events: none;
-        font-size: 14px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    }}
-    .toast.show {{
-        opacity: 1;
-    }}
-</style>
-
-<script>
-function showToast(m) {{
-    const t = document.getElementById('toast');
-    t.textContent = m;
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2000);
-}}
-
-function copyToClipboard(url) {{
-    navigator.clipboard.writeText(url)
-        .then(() => showToast('Copied to clipboard!'))
-        .catch(() => showToast('Failed to copy'));
-}}
-</script>
-
-</head>
-<body>
-
-<p>Click icons to copy their absolute URL. PNG versions also available. Google source <a href="https://cloud.google.com/icons">here</a>.</p>
-
-{"".join(sections)}
-
-<div id="toast" class="toast"></div>
-
-</body>
-</html>
-"""
-
-
 def main():
     parser = argparse.ArgumentParser(description="Generate icon gallery HTML")
     parser.add_argument("--url-prefix", required=True, help="URL prefix for icon links")
     parser.add_argument("--top-dir", required=True, help="Top-level directory")
     args = parser.parse_args()
 
-    url_prefix = args.url_prefix if args.url_prefix.endswith("/") else args.url_prefix + "/"
+    url_prefix = (
+        args.url_prefix if args.url_prefix.endswith("/") else args.url_prefix + "/"
+    )
     top_dir = Path(args.top_dir)
     output_path = top_dir / "index.html"
 
+    # Set up Jinja2 environment
+    script_dir = Path(__file__).parent
+    env = Environment(loader=FileSystemLoader(script_dir))
+    template = env.get_template("index.html.jinja2")
+
+    # Build data structure for template
     sections = []
     for dir_name, title in SECTION_CONFIG:
         section_dir = top_dir / dir_name
 
         items = []
         for f in sorted(f.name for f in section_dir.glob("*.svg")):
-            label = html.escape(LABEL_MAP.get(f, f))
-            img_src = html.escape(dir_name + "/" + f)
-            copy_url = html.escape(url_prefix + dir_name + "/" + f)
+            label = LABEL_MAP.get(f, f)
+            img_src = f"{dir_name}/{f}"
+            copy_url = f"{url_prefix}{dir_name}/{f}"
             items.append(
-                f'<div class="item" onclick="copyToClipboard(\'{copy_url}\')"><img src="{img_src}" alt="{label}"><div class="label">{label}</div></div>'
+                {
+                    "url": copy_url,
+                    "img_src": img_src,
+                    "label": label,
+                }
             )
 
-        sections.append(f'<h2>{html.escape(title)}</h2><div class="gallery">{"".join(items)}</div>')
+        sections.append(
+            {
+                "title": title,
+                "items": items,
+            }
+        )
 
-    output_path.write_text(build_html(sections))
+    # Render template and write output
+    html_output = template.render(sections=sections)
+    output_path.write_text(html_output)
 
 
 if __name__ == "__main__":
