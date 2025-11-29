@@ -1,8 +1,10 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <meta charset="UTF-8">
-    <title>Icon Gallery</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GCP Icon Gallery</title>
+    <meta name="description" content="Browse Google Cloud Platform product and category icons in SVG and PNG formats.">
 
     <style>
       body {
@@ -24,9 +26,19 @@
         cursor: pointer;
         user-select: none;
         transition: transform 0.2s ease;
+        /* Button reset */
+        background: none;
+        border: none;
+        padding: 0;
+        font-family: inherit;
       }
       .item:hover {
         transform: translateY(-2px);
+      }
+      .item:focus-visible {
+        outline: 2px solid #1a73e8;
+        outline-offset: 4px;
+        border-radius: 4px;
       }
       .item img {
         width: 64px;
@@ -65,12 +77,26 @@
         t.classList.add('show');
         setTimeout(() => t.classList.remove('show'), 2000);
       }
-      
+
       function copyToClipboard(url) {
+        if (!navigator.clipboard) {
+          showToast('Clipboard not available (use HTTPS)');
+          return;
+        }
         navigator.clipboard.writeText(url)
           .then(() => showToast('Copied to clipboard!'))
           .catch(() => showToast('Failed to copy'));
       }
+
+      // Event delegation
+      document.addEventListener('DOMContentLoaded', () => {
+        document.body.addEventListener('click', (e) => {
+          const item = e.target.closest('.item');
+          if (item && item.dataset.url) {
+            copyToClipboard(item.dataset.url);
+          }
+        });
+      });
     </script>
   </head>
 
@@ -82,17 +108,17 @@
     </p>
 
     {% for section in sections %}
-    <h2>{{ section['title'] }}</h2>
+    <h2>{{ section.title }}</h2>
     <div class="gallery">
-      {% for item in section['items'] %}
-      <div class="item" onclick="copyToClipboard('{{ item['url'] }}')">
-        <img src="{{ item['img_src'] }}" alt="{{ item['label'] }}">
-        <div class="label">{{ item['label'] }}</div>
-      </div>
+      {% for item in section.items %}
+      <button class="item" type="button" data-url="{{ item.url }}">
+        <img src="{{ item.img_src }}" alt="{{ item.label }}">
+        <div class="label">{{ item.label }}</div>
+      </button>
       {% endfor %}
     </div>
     {% endfor %}
 
-    <div id="toast" class="toast"></div>
+    <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
   </body>
 </html>
