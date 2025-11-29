@@ -24,4 +24,4 @@ cleanup:
   rm -rf core-products-icons category-icons *.zip
 
 serve: (generate-index "http://localhost:8000/")
-  python -m http.server --directory {{output_dir}} 
+  uv run -m http.server --directory {{output_dir}}
