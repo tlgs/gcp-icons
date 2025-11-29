@@ -1,7 +1,7 @@
 output_dir := '_site'
 base_url := 'https://tlgs.github.io/gcp-icons/'
 
-build: download unzip collect generate-index cleanup
+build: download unzip collect render cleanup
 
 download:
   curl -sS \
@@ -17,11 +17,11 @@ collect:
   find core-products-icons -type f -regextype posix-extended -iregex ".*\.(png|svg)$" -exec mv -t {{output_dir}}/core {} +
   find category-icons -type f -regextype posix-extended -iregex ".*\.(png|svg)$" -exec mv -t {{output_dir}}/category {} +
 
-generate-index url_prefix=base_url:
-  uv run make_index.py --url-prefix {{url_prefix}} --top-dir {{output_dir}} 
+render url_prefix=base_url:
+  uv run main.py --url-prefix {{url_prefix}} --top-dir {{output_dir}} 
 
 cleanup:
   rm -rf core-products-icons category-icons *.zip
 
-serve: (generate-index "http://localhost:8000/")
+serve: (render "http://localhost:8000/")
   uv run -m http.server --directory {{output_dir}}
