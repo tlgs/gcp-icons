@@ -2,17 +2,9 @@
 # requires-python = ">=3.9"
 # dependencies = [ "jinja2" ]
 # ///
-
-"""Generate HTML index page for GCP icon galleries.
-
-Creates an interactive HTML gallery displaying SVG icons from configured
-directories using Jinja2 templates. Icons are organized by section (core
-products and categories) with click-to-copy URL functionality.
-"""
-
 import argparse
 from pathlib import Path
-from typing import Final, NamedTuple
+from typing import NamedTuple
 
 from jinja2 import Environment, FileSystemLoader, StrictUndefined, select_autoescape
 
@@ -28,7 +20,7 @@ class Section(NamedTuple):
     items: list[IconItem]
 
 
-LABEL_MAP: Final[dict[str, str]] = {
+LABEL_MAP = {
     "AIHypercomputer-512-color.svg": "AI Hypercomputer",
     "AlloyDB-512-color.svg": "AlloyDB",
     "Anthos-512-color.svg": "Anthos",
@@ -76,13 +68,13 @@ LABEL_MAP: Final[dict[str, str]] = {
     "WebMobile-512-color.svg": "Web & Mobile",
 }
 
-SECTION_CONFIG: Final[list[tuple[str, str]]] = [
+SECTION_CONFIG = [
     ("core", "Core product icons"),
     ("category", "Product category icons"),
 ]
 
 
-def main() -> None:
+def main():
     parser = argparse.ArgumentParser(description="Generate icon gallery HTML")
     parser.add_argument("--url-prefix", required=True, help="URL prefix for icon links")
     parser.add_argument("--top-dir", required=True, help="Top-level directory")
@@ -109,15 +101,13 @@ def main() -> None:
     sections = []
     for dir_name, title in SECTION_CONFIG:
         section_dir = top_dir / dir_name
-        items = []
-        for f in sorted(f.name for f in section_dir.glob("*.svg")):
-            label = LABEL_MAP.get(f, f)
-            img_src = f"{dir_name}/{f}"
-            copy_url = f"{url_prefix}{dir_name}/{f}"
-            items.append(IconItem(url=copy_url, img_src=img_src, label=label))
-        sections.append(Section(title=title, items=items))
+        items = [
+            IconItem(f"{url_prefix}{dir_name}/{f}", f"{dir_name}/{f}", LABEL_MAP[f])
+            for f in sorted(f.name for f in section_dir.glob("*.svg"))
+        ]
+        sections.append(Section(title, items))
 
-    # Render template and write output
+    # render template and write output
     html_output = template.render(sections=sections)
     output_path.write_text(html_output, encoding="utf-8")
 
